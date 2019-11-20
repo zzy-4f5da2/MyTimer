@@ -1,21 +1,30 @@
 package cn.oscrazy.mytimer;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
+import android.Manifest;
+import android.content.*;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.os.BatteryManager;
+import android.os.Environment;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Html;
 import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.Calendar;
+
+import static cn.oscrazy.mytimer.MusicUtils.*;
 
 public class MyTimerActivity extends AppCompatActivity {
 
@@ -23,11 +32,16 @@ public class MyTimerActivity extends AppCompatActivity {
     DateTimeEntity dateTimeEntity = new DateTimeEntity();
     //标记打开APP是否第一次更新屏幕
     boolean firstFlag = true;
+    //闹铃窗口
+    private RelativeLayout alarmLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my_timer);
+
+        //初始化闹钟数据
+        init(this);
 
         //隐藏ActionBar
         getSupportActionBar().hide();
@@ -38,13 +52,40 @@ public class MyTimerActivity extends AppCompatActivity {
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 
+        //申请读写动态权限 - 播放音乐
+        if(ContextCompat.checkSelfPermission(MyTimerActivity.this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(MyTimerActivity.this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
+            //这里会调用后面的onRequestPermissionResult
+        }else{
+            initMediaPlayer(0);
+        }
+
         //初始化字体样式
         TextView timeAMPM = findViewById(R.id.time_ampm);
         TextView date = findViewById(R.id.date);
         TextView time = findViewById(R.id.time);
         TextView battery = findViewById(R.id.battery);
+        TextView alarmInfo = findViewById(R.id.alarmInfo);
+        TextView alarmNext = findViewById(R.id.alarmNext);
         //全局遮罩
         TextView allLight = findViewById(R.id.allLight);
+        //关闭闹钟按钮
+        TextView stopMusic = findViewById(R.id.stopMusic);
+        alarmLayout = findViewById(R.id.alarmLayout);
+
+        //设置点击事件
+        //关闭闹钟按钮
+        stopMusic.setOnClickListener(v -> {
+            stopMusic();
+            alarmLayout.setVisibility(View.GONE);
+        });
+        //点击下一闹钟信息设置闹钟
+        alarmNext.setOnClickListener(v -> {
+            setAlarmsByView(MyTimerActivity.this);
+        });
+
 
         //使用自定义字体
         AssetManager assets = getAssets();
@@ -53,6 +94,8 @@ public class MyTimerActivity extends AppCompatActivity {
         date.setTypeface(fromAsset);
         time.setTypeface(fromAsset);
         battery.setTypeface(fromAsset);
+        alarmInfo.setTypeface(fromAsset);
+        alarmNext.setTypeface(fromAsset);
 
         //获取电池信息广播
         IntentFilter filter = new IntentFilter();
@@ -64,7 +107,7 @@ public class MyTimerActivity extends AppCompatActivity {
                 //2 -- 充电   4-- 放电
                 int stateVal = intent.getIntExtra("status",BatteryManager.BATTERY_STATUS_UNKNOWN); ///获取电池状态
                 int tmeperatureVal = intent.getIntExtra("temperature", 0);  ///获取电池温度
-                battery.setText("电池电量 : " + batteryVal + "%    电池温度 : " + tmeperatureVal/10.0 +(stateVal==2?"℃    正在充电":"℃"));
+                battery.setText((stateVal==2?"祈祷晴天 : ":"晴天覆盖 : ") + batteryVal + (stateVal==2?"%+/":"%/")+tmeperatureVal/10+"℃");
                 //电池警报
                 if (batteryVal < 30 && stateVal != 2){
                     battery.setTextColor(Color.parseColor("#ff0000"));
@@ -82,7 +125,7 @@ public class MyTimerActivity extends AppCompatActivity {
                     //在UI线程中更新
                     runOnUiThread(() -> {
                         //每秒刷新屏幕上信息
-                        updateTimerDisplay(time, date, timeAMPM, allLight);
+                        updateTimerDisplay(time, date, timeAMPM, allLight,alarmInfo,alarmNext);
                     });
                     Thread.sleep(1000);
                 } catch (Throwable t) {
@@ -96,12 +139,36 @@ public class MyTimerActivity extends AppCompatActivity {
     }
 
 
+
+    @Override
+    //拒绝权限获取则直接关闭程序
+    public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){
+        switch (requestCode){
+            case 1:
+            {
+                if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    Toast.makeText(MyTimerActivity.this,"已获取本程序的最高权限",Toast.LENGTH_SHORT).show();
+                    initMediaPlayer(0);
+                }else{
+                    Toast.makeText(MyTimerActivity.this,"拒绝权限将无法使用程序",Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+
     /**
      * 线程中更新的组件
      * 0 - 小时分钟
      * 1 - 日期栏
      * 2 - 上午下午
      * 3 - 全局遮罩
+     * 4 - 闹钟提示
+     * 5 - 下一闹钟
      * @param views 组件对象
      */
     private void updateTimerDisplay(TextView... views) {
@@ -118,6 +185,12 @@ public class MyTimerActivity extends AppCompatActivity {
             //根据时间显示不同的样式
             displayMode(d.getHour(),views);
             firstFlag = false;
+        }
+
+        /** 每分钟更新区域 */
+        if(d.getSecond() == 0){
+            //响铃
+            isAlarm(d,views[4]);
         }
 
         /** 每小时更新区域 */
@@ -140,18 +213,35 @@ public class MyTimerActivity extends AppCompatActivity {
             + "<font><small><small><small><small>"
                 +handleZero(d.getSecond())
             +"</small></small></small></small></font>"));
+        views[5].setText(getNextAlarm(d));
 
+    }
+
+    //检测是否是闹铃或整点报时
+    private void isAlarm(DateTimeEntity d,TextView alarmInfo) {
+        for(int i = 0 ; i < myAlarmList.size() ; i++){
+            DateTimeEntity dte = myAlarmList.get(i);
+            //当前秒存在闹钟
+            if(d.getWeek() == dte.getWeek() && d.getHour() == dte.getHour()
+                    && d.getMinute() == dte.getMinute()){
+                startMusic(0);
+                alarmLayout.setVisibility(View.VISIBLE);
+                alarmInfo.setText("你设置的闹铃(" + d.getWeek() + " " + d.getHour() + ":" + handleZero(d.getMinute()) + ")已生效");
+                return;
+            }
+        }
     }
 
     //根据不同时间显示不同样式
     private void displayMode(int hour,TextView... views) {
         TextView allLight = views[3];
+
         if((hour >= 6 && hour < 24) || (hour >= 0 && hour < 1)){
             //早上6点到中午凌晨1点,遮罩亮度设置100% 范围:0~255
-            allLight.getBackground().setAlpha(0);
+            allLight.setBackgroundColor(Color.parseColor("#00000000"));
         }else if(hour >= 1 && hour < 6){
             //凌晨1点到中午凌晨6点,遮罩亮度设置50%
-            allLight.getBackground().setAlpha(127);
+            allLight.setBackgroundColor(Color.parseColor("#bb000000"));
         }
     }
 
@@ -171,9 +261,6 @@ public class MyTimerActivity extends AppCompatActivity {
         return dateTimeEntity;
     }
 
-    //小于10的前面补0
-    private String handleZero(int val){
-        return val < 10 ? ("0" + val) : ("" + val) ;
-    }
+
 
 }
