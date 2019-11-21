@@ -209,7 +209,7 @@ public class MyTimerActivity extends AppCompatActivity {
             }
         }
         //调试
-        //startMusic(MUSIC_TIMETIP_TYPE,d.getHour() - 8,MyTimerActivity.this);
+        //startMusic(MUSIC_TIMETIP_TYPE,d.getMinute()%15,MyTimerActivity.this);
     }
 
     //根据不同时间显示不同样式

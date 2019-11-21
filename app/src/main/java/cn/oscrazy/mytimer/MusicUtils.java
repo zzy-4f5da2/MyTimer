@@ -174,6 +174,7 @@ public class MusicUtils {
     //播放音乐,传入音源下标
     public static void startMusic(int type, int index, Context context){
         if(!mediaPlayer.isPlaying()){
+            mediaPlayer.reset();
             initMediaPlayer(type, index, context);
             mediaPlayer.start();
         }
