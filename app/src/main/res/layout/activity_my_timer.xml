@@ -7,10 +7,9 @@
         xmlns:android="http://schemas.android.com/apk/res/android">
 
     <TextView
+            android:id="@+id/behindLight"
             android:layout_width="match_parent"
-            android:background="#000000"
-            android:alpha="0.5"
-              android:layout_height="match_parent"/>
+            android:layout_height="match_parent"/>
 
     <LinearLayout
             android:layout_marginTop="10dp"
@@ -123,7 +122,6 @@
             android:layout_height="match_parent">
 
         <LinearLayout
-
                 android:orientation="horizontal"
                 android:layout_margin="20dp"
                 android:gravity="center"
@@ -145,15 +143,16 @@
 
             <TextView
                     android:id="@+id/stopMusic"
-                    android:layout_weight="1"
                     android:text="关闭闹钟"
-                    android:layout_marginRight="30dp"
                     android:gravity="center"
-                    android:textSize="25dp"
+                    android:textStyle="bold"
+                    android:textSize="33dp"
+                    android:paddingLeft="15dp"
                     android:textColor="#4499ff"
                     android:background="@drawable/rad_bg2"
-                    android:layout_width="1dp"
-                    android:layout_height="60dp"/>
+                    android:layout_width="220dp"
+                    android:layout_height="match_parent"/>
+
 
         </LinearLayout>
 

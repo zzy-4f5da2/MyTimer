@@ -3,6 +3,7 @@ package cn.oscrazy.mytimer;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
 import android.os.Environment;
 import android.support.v7.app.AlertDialog;
@@ -15,17 +16,42 @@ import java.util.List;
 
 public class MusicUtils {
 
+    public static final int MUSIC_ALARM_TYPE = 0;
+    public static final int MUSIC_TIMETIP_TYPE = 1;
+
     //简单数据存储
     private static SharedPreferences sp;
 
     private static MediaPlayer mediaPlayer = new MediaPlayer();
 
-    private static File pFile = Environment.getExternalStorageDirectory();//SD卡根目录
+    //SD卡根目录
+    //private static File pFile = Environment.getExternalStorageDirectory();
 
     //歌曲路径
-    private static String[] musicPaths = new String[]{
-            pFile + "/MyTimerMusic/RADWIMPS - 陽菜と、走る帆高.flac",
-            pFile + "/MyTimerMusic/test002.mp3",
+    public static String[][] musicPaths = new String[][]{
+        {
+            "MyTimerMusic/RADWIMPS-陽菜と、走る帆高.mp3"
+        },
+        {
+            "MyTimerMusic/zdbs08.mp3",
+            "MyTimerMusic/zdbs09.mp3",
+            "MyTimerMusic/zdbs10.mp3",
+            "MyTimerMusic/zdbs11.mp3",
+            "MyTimerMusic/zdbs12.mp3",
+            "MyTimerMusic/zdbs13.mp3",
+            "MyTimerMusic/zdbs14.mp3",
+            "MyTimerMusic/zdbs15.mp3",
+            "MyTimerMusic/zdbs16.mp3",
+            "MyTimerMusic/zdbs17.mp3",
+            "MyTimerMusic/zdbs18.mp3",
+            "MyTimerMusic/zdbs19.mp3",
+            "MyTimerMusic/zdbs20.mp3",
+            "MyTimerMusic/zdbs21.mp3",
+            "MyTimerMusic/zdbs22.mp3",
+            "MyTimerMusic/zdbs23.mp3",
+            "MyTimerMusic/zdbs24.mp3",
+            "MyTimerMusic/zdbs25.mp3",
+        }
     };
 
     //我设置的所有闹钟
@@ -146,17 +172,19 @@ public class MusicUtils {
     }
 
     //播放音乐,传入音源下标
-    public static void startMusic(int index){
+    public static void startMusic(int type, int index, Context context){
         if(!mediaPlayer.isPlaying()){
-            initMediaPlayer(index);
+            initMediaPlayer(type, index, context);
             mediaPlayer.start();
         }
     }
 
     //初始化音乐
-    public static void initMediaPlayer(int musicIndex){
+    public static void initMediaPlayer(int type, int musicIndex, Context context){
         try {
-            mediaPlayer.setDataSource(musicPaths[musicIndex]);//指定音频文件路径
+            //播放 assets/a2.mp3 音乐文件
+            AssetFileDescriptor fd = context.getAssets().openFd(musicPaths[type][musicIndex]);
+            mediaPlayer.setDataSource(fd.getFileDescriptor(),fd.getStartOffset(),fd.getLength());//指定音频文件路径
             mediaPlayer.prepare();//让MediaPlayer进入到准备状态
         }catch(Exception e){
             e.printStackTrace();
