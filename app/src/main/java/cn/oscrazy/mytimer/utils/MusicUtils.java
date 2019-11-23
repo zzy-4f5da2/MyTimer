@@ -1,16 +1,15 @@
-package cn.oscrazy.mytimer;
+package cn.oscrazy.mytimer.utils;
 
+import android.app.Activity;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
-import android.os.Environment;
 import android.support.v7.app.AlertDialog;
 import android.widget.EditText;
 import android.widget.Toast;
+import cn.oscrazy.mytimer.entity.DateTimeEntity;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +29,10 @@ public class MusicUtils {
     //歌曲路径
     public static String[][] musicPaths = new String[][]{
         {
-            "MyTimerMusic/RADWIMPS-陽菜と、走る帆高.mp3"
+            "MyTimerMusic/RADWIMPS-陽菜と、走る帆高.mp3",
+            "MyTimerMusic/RADWIMPS-初の晴れ女バイト.mp3",
+            "MyTimerMusic/RADWIMPS-花火大会.mp3",
+            "MyTimerMusic/RADWIMPS-晴れゆく空.mp3"
         },
         {
             "MyTimerMusic/zdbs08.mp3",
@@ -92,7 +94,7 @@ public class MusicUtils {
         getAlarms();
     }
 
-    public static void setAlarmsByView(Context context){
+    public static void setAlarmsByView(Activity context){
         final EditText editText = new EditText(context);
         editText.setText(sp.getString("alarms",""));
         new AlertDialog.Builder(context).setTitle("设置闹钟")
@@ -109,6 +111,7 @@ public class MusicUtils {
                     Toast.makeText(context, "设置格式如:[周三:5:23] 多个用逗号分隔[周二:11:23,周四:13:23],", Toast.LENGTH_LONG).show();
                 })
                 .show();
+
     }
 
     public static String getNextAlarm(DateTimeEntity d) {

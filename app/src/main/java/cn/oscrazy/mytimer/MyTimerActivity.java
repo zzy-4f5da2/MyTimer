@@ -1,25 +1,26 @@
 package cn.oscrazy.mytimer;
 
-import android.Manifest;
 import android.content.*;
-import android.content.pm.PackageManager;
+import android.content.pm.ActivityInfo;
 import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.BatteryManager;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Html;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import cn.oscrazy.mytimer.entity.DateTimeEntity;
+import cn.oscrazy.mytimer.utils.BatteryUtils;
 
 import java.util.Calendar;
 
-import static cn.oscrazy.mytimer.MusicUtils.*;
+import static cn.oscrazy.mytimer.utils.MusicUtils.*;
 
 public class MyTimerActivity extends AppCompatActivity {
 
@@ -29,6 +30,9 @@ public class MyTimerActivity extends AppCompatActivity {
     boolean firstFlag = true;
     //闹铃窗口
     private RelativeLayout alarmLayout;
+
+    String tempBattery = "未开始监测";
+    String tempTemp = "未开始监测";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,11 +45,17 @@ public class MyTimerActivity extends AppCompatActivity {
         //隐藏ActionBar
         getSupportActionBar().hide();
 
-        //设置沉浸式
-        getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        //设置导航栏为透明颜色
+        Window window = getWindow();
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+        window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.setNavigationBarColor(Color.TRANSPARENT);
+
+        //强制横屏
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
         //初始化字体样式
         TextView timeAMPM = findViewById(R.id.time_ampm);
@@ -75,6 +85,10 @@ public class MyTimerActivity extends AppCompatActivity {
         alarmNext.setOnClickListener(v -> {
             setAlarmsByView(MyTimerActivity.this);
         });
+        //显示电池日志
+        battery.setOnClickListener(v -> {
+            BatteryUtils.showBatteryLog(MyTimerActivity.this);
+        });
 
 
         //使用自定义字体
@@ -101,9 +115,13 @@ public class MyTimerActivity extends AppCompatActivity {
                 //电池警报
                 if (batteryVal < 30 && stateVal != 2){
                     battery.setTextColor(Color.parseColor("#ff0000"));
+                }else if (stateVal == 2){
+                    battery.setTextColor(Color.parseColor("#66ffbb"));
                 }else{
                     battery.setTextColor(Color.parseColor("#ffffff"));
                 }
+                tempBattery = batteryVal + "";
+                tempTemp = tmeperatureVal/10.0 + "";
             }
         };
         registerReceiver(receiver,filter);
@@ -159,6 +177,11 @@ public class MyTimerActivity extends AppCompatActivity {
         if(d.getSecond() == 0){
             //响铃
             isAlarm(d,views[4]);
+            if(d.getMinute() % 10 == 0){
+                BatteryUtils.recode(d.getMonth() + "/" + d.getDay(),
+                        d.getHour() + ":" + handleZero(d.getMinute()),tempBattery,tempTemp
+                        );
+            }
         }
 
         /** 每小时更新区域 */
@@ -192,21 +215,32 @@ public class MyTimerActivity extends AppCompatActivity {
             //当前秒存在闹钟
             if(d.getWeek() == dte.getWeek() && d.getHour() == dte.getHour()
                     && d.getMinute() == dte.getMinute()){
-                startMusic(MUSIC_ALARM_TYPE,0,MyTimerActivity.this);
+                //随机播放闹钟音乐
+                startMusic(MUSIC_ALARM_TYPE, (int)(Math.random() * musicPaths[MUSIC_ALARM_TYPE].length),MyTimerActivity.this);
                 alarmLayout.setVisibility(View.VISIBLE);
                 alarmInfo.setText("你设置的闹铃(" + d.getWeek() + " " + d.getHour() + ":" + handleZero(d.getMinute()) + ")已生效");
                 return;
             }
         }
         //如果不存在闹钟,检测是否整点
+        //周一到周五 9点到24点开启报时,周六日 11点到25点开启报时
         if(d.getMinute() == 0){
-            if(d.getHour() == 0){
-                startMusic(MUSIC_TIMETIP_TYPE,musicPaths[MUSIC_TIMETIP_TYPE].length - 2,MyTimerActivity.this);
-            }else if(d.getHour() == 1){
-                startMusic(MUSIC_TIMETIP_TYPE,musicPaths[MUSIC_TIMETIP_TYPE].length - 1,MyTimerActivity.this);
-            }else if(d.getHour() >= 8 && d.getHour() <= 23){
-                startMusic(MUSIC_TIMETIP_TYPE, d.getHour() - 8,MyTimerActivity.this);
+            if(d.getWeekByEE().equals("周六") || d.getWeekByEE().equals("周日")){
+                if(d.getHour() == 0){
+                    startMusic(MUSIC_TIMETIP_TYPE,musicPaths[MUSIC_TIMETIP_TYPE].length - 2,MyTimerActivity.this);
+                }else if(d.getHour() == 1){
+                    startMusic(MUSIC_TIMETIP_TYPE,musicPaths[MUSIC_TIMETIP_TYPE].length - 1,MyTimerActivity.this);
+                }else if(d.getHour() >= 11 && d.getHour() <= 23){
+                    startMusic(MUSIC_TIMETIP_TYPE, d.getHour() - 8,MyTimerActivity.this);
+                }
+            }else{
+                if(d.getHour() == 0){
+                    startMusic(MUSIC_TIMETIP_TYPE,musicPaths[MUSIC_TIMETIP_TYPE].length - 2,MyTimerActivity.this);
+                }else if(d.getHour() >= 9 && d.getHour() <= 23){
+                    startMusic(MUSIC_TIMETIP_TYPE, d.getHour() - 8,MyTimerActivity.this);
+                }
             }
+
         }
         //调试
         //startMusic(MUSIC_TIMETIP_TYPE,d.getMinute()%15,MyTimerActivity.this);

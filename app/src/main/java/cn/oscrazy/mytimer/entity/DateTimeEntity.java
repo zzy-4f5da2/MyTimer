@@ -1,4 +1,6 @@
-package cn.oscrazy.mytimer;
+package cn.oscrazy.mytimer.entity;
+
+import cn.oscrazy.mytimer.Lunar;
 
 public class DateTimeEntity {
 
