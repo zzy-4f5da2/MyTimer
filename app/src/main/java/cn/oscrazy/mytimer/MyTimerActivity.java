@@ -30,9 +30,25 @@ public class MyTimerActivity extends AppCompatActivity {
     boolean firstFlag = true;
     //闹铃窗口
     private RelativeLayout alarmLayout;
+    //背景图片
+    private static int[] BACKGROUP_PICTURE = new int[]{
+        R.drawable.weathering01,
+        R.drawable.weathering02,
+        R.drawable.weathering03,
+        R.drawable.weathering04,
+        R.drawable.weathering05,
+        R.drawable.weathering06,
+        R.drawable.weathering07,
+        R.drawable.weathering08,
+        R.drawable.weathering09,
+        R.drawable.weathering10,
+        R.drawable.weathering11,
+        R.drawable.weathering12
+    };
 
     String tempBattery = "未开始监测";
     String tempTemp = "未开始监测";
+    private RelativeLayout parentLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +84,8 @@ public class MyTimerActivity extends AppCompatActivity {
         TextView allLight = findViewById(R.id.allLight);
         //背景遮罩
         TextView behindLight = findViewById(R.id.behindLight);
+        //背景图片
+        parentLayout = findViewById(R.id.parentLayout);
         //关闭闹钟按钮
         TextView stopMusic = findViewById(R.id.stopMusic);
         alarmLayout = findViewById(R.id.alarmLayout);
@@ -169,7 +187,11 @@ public class MyTimerActivity extends AppCompatActivity {
             views[1].setText(d.getYear() + "-" + d.getMonth() + "-" + d.getDay() + "     " + d.getWeek()
                     + "     农历" + d.getLunar().getMonth() + "月" + d.getLunar().getChinaDayString(d.getLunar().getDay()));
             //根据时间显示不同的样式
-            displayMode(d.getHour(),views);
+            boolean flag = displayMode(d.getHour(),views);
+            if(flag) {
+                //更换壁纸
+                parentLayout.setBackgroundResource(BACKGROUP_PICTURE[(int) (Math.random() * BACKGROUP_PICTURE.length)]);
+            }
             firstFlag = false;
         }
 
@@ -189,7 +211,11 @@ public class MyTimerActivity extends AppCompatActivity {
             //am,pm状态
             views[2].setText(d.getAmpm());
             //根据时间显示不同的样式
-            displayMode(d.getHour(),views);
+            boolean flag = displayMode(d.getHour(),views);
+            if(flag) {
+                //更换壁纸
+                parentLayout.setBackgroundResource(BACKGROUP_PICTURE[(int) (Math.random() * BACKGROUP_PICTURE.length)]);
+            }
         }
 
         /** 每天0点更新区域 */
@@ -247,18 +273,21 @@ public class MyTimerActivity extends AppCompatActivity {
     }
 
     //根据不同时间显示不同样式
-    private void displayMode(int hour,TextView... views) {
+    private boolean displayMode(int hour,TextView... views) {
         TextView allLight = views[3];
         TextView behindLight = views[6];
         if((hour >= 6 && hour < 24) || (hour >= 0 && hour < 1)){
             //早上6点到中午凌晨1点
             allLight.setBackgroundColor(Color.parseColor("#00000000"));
             behindLight.setBackgroundColor(Color.parseColor("#60000000"));
+            return true;
         }else if(hour >= 1 && hour < 6){
             //凌晨1点到中午凌晨6点
             allLight.setBackgroundColor(Color.parseColor("#BB000000"));
             behindLight.setBackgroundColor(Color.parseColor("#FF000000"));
+            return false;
         }
+        return false;
     }
 
     //获取当前的所有日期时间信息
