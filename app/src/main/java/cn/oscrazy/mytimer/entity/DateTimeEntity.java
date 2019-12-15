@@ -82,21 +82,21 @@ public class DateTimeEntity {
     public String getWeek() {
         switch (week) {
             case 1:
-                return "にちようび(日)";
+                return "日曜日(日)";
             case 2:
-                return "げつようび(一)";
+                return "月曜日(一)";
             case 3:
-                return "かようび(二)";
+                return "火曜日(二)";
             case 4:
-                return "すいようび(三)";
+                return "水曜日(三)";
             case 5:
-                return "もくようび(四)";
+                return "木曜日(四)";
             case 6:
-                return "きんようび(五)";
+                return "金曜日(五)";
             case 7:
-                return "どようび(六)";
+                return "土曜日(六)";
             default:
-                return "なんようび(未知)";
+                return "何曜日(未知)";
         }
     }
 

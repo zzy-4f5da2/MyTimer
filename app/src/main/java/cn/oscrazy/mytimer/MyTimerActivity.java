@@ -19,6 +19,7 @@ import cn.oscrazy.mytimer.entity.DateTimeEntity;
 import cn.oscrazy.mytimer.utils.BatteryUtils;
 
 import java.util.Calendar;
+import java.util.Map;
 
 import static cn.oscrazy.mytimer.utils.MusicUtils.*;
 
@@ -80,6 +81,7 @@ public class MyTimerActivity extends AppCompatActivity {
         TextView battery = findViewById(R.id.battery);
         TextView alarmInfo = findViewById(R.id.alarmInfo);
         TextView alarmNext = findViewById(R.id.alarmNext);
+        TextView nowDian = findViewById(R.id.nowDian);
         //全局遮罩
         TextView allLight = findViewById(R.id.allLight);
         //背景遮罩
@@ -118,6 +120,7 @@ public class MyTimerActivity extends AppCompatActivity {
         battery.setTypeface(fromAsset);
         alarmInfo.setTypeface(fromAsset);
         alarmNext.setTypeface(fromAsset);
+        nowDian.setTypeface(fromAsset);
 
         //获取电池信息广播
         IntentFilter filter = new IntentFilter();
@@ -129,7 +132,7 @@ public class MyTimerActivity extends AppCompatActivity {
                 //2 -- 充电   4-- 放电
                 int stateVal = intent.getIntExtra("status",BatteryManager.BATTERY_STATUS_UNKNOWN); ///获取电池状态
                 int tmeperatureVal = intent.getIntExtra("temperature", 0);  ///获取电池温度
-                battery.setText((stateVal==2?"祈祷晴天 : ":"晴天覆盖 : ") + batteryVal + (stateVal==2?"%+/":"%/")+tmeperatureVal/10+"℃");
+                battery.setText((stateVal==2?"祈祷晴天 : ":"晴天覆盖 : ") + batteryVal + (stateVal==2?"%+":"%"));
                 //电池警报
                 if (batteryVal < 30 && stateVal != 2){
                     battery.setTextColor(Color.parseColor("#ff0000"));
@@ -139,7 +142,7 @@ public class MyTimerActivity extends AppCompatActivity {
                     battery.setTextColor(Color.parseColor("#ffffff"));
                 }
                 tempBattery = batteryVal + "";
-                tempTemp = tmeperatureVal/10.0 + "";
+                tempTemp = tmeperatureVal/10.0 + "℃";
             }
         };
         registerReceiver(receiver,filter);
@@ -151,7 +154,7 @@ public class MyTimerActivity extends AppCompatActivity {
                     //在UI线程中更新
                     runOnUiThread(() -> {
                         //每秒刷新屏幕上信息
-                        updateTimerDisplay(time, date, timeAMPM, allLight,alarmInfo,alarmNext,behindLight);
+                        updateTimerDisplay(time, date, timeAMPM, allLight,alarmInfo,alarmNext,behindLight,nowDian);
                     });
                     Thread.sleep(1000);
                 } catch (Throwable t) {
@@ -173,6 +176,7 @@ public class MyTimerActivity extends AppCompatActivity {
      * 4 - 闹钟提示
      * 5 - 下一闹钟
      * 6 - 背景遮罩
+     * 7 - 实时电流电压
      * @param views 组件对象
      */
     private void updateTimerDisplay(TextView... views) {
@@ -192,7 +196,15 @@ public class MyTimerActivity extends AppCompatActivity {
                 //更换壁纸
                 parentLayout.setBackgroundResource(BACKGROUP_PICTURE[(int) (Math.random() * BACKGROUP_PICTURE.length)]);
             }
+            Map<String, String> map = BatteryUtils.getCurrent();
+            views[7].setText(map.get("dianYa") + " | " + map.get("dianLiu") + " | " + tempTemp);
             firstFlag = false;
+        }
+
+        //每10秒更新
+        if (d.getSecond() % 10 == 0){
+            Map<String, String> map = BatteryUtils.getCurrent();
+            views[7].setText(map.get("dianYa") + " | " + map.get("dianLiu") + " | " + tempTemp);
         }
 
         /** 每分钟更新区域 */
@@ -276,14 +288,14 @@ public class MyTimerActivity extends AppCompatActivity {
     private boolean displayMode(int hour,TextView... views) {
         TextView allLight = views[3];
         TextView behindLight = views[6];
-        if((hour >= 6 && hour < 24) || (hour >= 0 && hour < 1)){
+        if((hour >= 6 && hour < 24)){
             //早上6点到中午凌晨1点
             allLight.setBackgroundColor(Color.parseColor("#00000000"));
-            behindLight.setBackgroundColor(Color.parseColor("#60000000"));
+            behindLight.setBackgroundColor(Color.parseColor("#50000000"));
             return true;
-        }else if(hour >= 1 && hour < 6){
+        }else if(hour < 6){
             //凌晨1点到中午凌晨6点
-            allLight.setBackgroundColor(Color.parseColor("#BB000000"));
+            allLight.setBackgroundColor(Color.parseColor("#80000000"));
             behindLight.setBackgroundColor(Color.parseColor("#FF000000"));
             return false;
         }

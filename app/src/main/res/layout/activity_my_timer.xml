@@ -80,13 +80,13 @@
                     android:layout_width="wrap_content"
                     android:text="00:00"
                     android:textColor="#fff"
-                    android:layout_marginTop="-65dp"
+                    android:layout_marginTop="-58dp"
                     android:textStyle="bold"
                     android:shadowColor="#333333"
                     android:shadowRadius="40"
                     android:shadowDx="0"
                     android:shadowDy="0"
-                    android:textSize="290dp"
+                    android:textSize="280dp"
                     android:layout_height="wrap_content"/>
 
 
@@ -105,6 +105,17 @@
 
 
     </LinearLayout>
+
+
+    <TextView
+            android:id="@+id/nowDian"
+            android:layout_margin="10dp"
+            android:text="电压:4.000V 电流"
+            android:textColor="#fff"
+            android:textSize="18dp"
+            android:layout_alignParentBottom="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
 
     <!--全局遮罩 - 极限亮度控制 -->
     <TextView
